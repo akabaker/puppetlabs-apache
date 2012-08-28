@@ -20,7 +20,7 @@
 class apache::params {
 
   $ssl           = true
-  $template      = 'apache/vhost-default.conf.erb'
+  $template      = 'apache/vhost-csg.conf.erb'
   $priority      = '25'
   $servername    = ''
   $serveraliases = ''
@@ -29,6 +29,9 @@ class apache::params {
   $options       = 'Indexes FollowSymLinks MultiViews'
   $override      = 'None'
   $vhost_name    = '*'
+  $openssl_dir	 = '/etc/pki/tls'
+  $cert_dir	     = "${openssl_dir}/certs"
+  $key_dir	     = "${openssl_dir}/private"
 
   if $::osfamily == 'redhat' or $::operatingsystem == 'amazon' {
     $user                  = 'apache'

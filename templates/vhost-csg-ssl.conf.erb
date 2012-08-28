@@ -1,8 +1,4 @@
-# ************************************
-# Default csg-vhost in module puppetlabs-apache
-# Managed by Puppet
-# ************************************
-
+# ---------------------------------------------------------------------
 <VirtualHost <%= ipaddress %>:<%= port %>>
     ServerName <%= srvname %>
 	<% if serveradmin %>
@@ -24,12 +20,28 @@
         allow from all
     </Directory>
 
+    SSLEngine on
+    SSLCipherSuite ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP
+    SSLCertificateFile <%= scope.lookupvar('apache::params::cert_dir') %>/<%= cert %>
+    SSLCertificateKeyFile <%= scope.lookupvar('apache::params::key_dir') %>/<%= key %>
+
+   <Files ~ "\.(cgi|shtml|phtml|php3?)$">
+        SSLOptions +StdEnvVars
+    </Files>
+
+    SetEnvIf User-Agent ".*MSIE.*" \
+        nokeepalive ssl-unclean-shutdown \
+        downgrade-1.0 force-response-1.0
+
     AddType text/html .shtml
     AddHandler server-parsed .html .shtml
 
     <IfModule mod_userdir.c>
         UserDir disable
     </IfModule>
+
+    AddHandler cgi-script .cgi
+    AddHandler cgi-script .pl
 
 	ErrorLog <%= logroot %>/<%= name %>_error.log
 	LogLevel warn

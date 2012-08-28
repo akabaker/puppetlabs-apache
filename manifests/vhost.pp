@@ -36,7 +36,7 @@
 #  }
 #
 define apache::vhost(
-    $port,
+    $port				= '80',
     $docroot,
     $docroot_owner      = 'root',
     $docroot_group      = 'root',
@@ -54,7 +54,10 @@ define apache::vhost(
     $apache_name        = $apache::params::apache_name,
     $vhost_name         = $apache::params::vhost_name,
     $logroot            = "/var/log/$apache::params::apache_name",
-    $ensure             = 'present'
+    $ensure             = 'present',
+	$cert				= '',
+	$key				= '',
+	$intermediate		= '',
   ) {
 
   validate_re($ensure, '^(present|absent)$',
@@ -63,12 +66,31 @@ define apache::vhost(
 
   include apache
 
+  if $cert {
+  	file { "${apache::params::cert_dir}/${cert}":
+  		owner => "root",
+  		group => "root",
+  		mode  => 0644,
+  		source => "puppet:///apache/certs/${cert}",
+  	}
+  }
+
+  if $key {
+  	file { "${apache::params::key_dir}/${key}":
+  		owner => "root",
+  		group => "root",
+  		mode  => 0600,
+  		source => "puppet:///apache/keys/${key}",
+  	}
+  }
+
   if $servername == '' {
     $srvname = $name
   } else {
     $srvname = $servername
   }
 
+  #SETS TEMPLATE TO SSL TEMPLATE
   if $ssl == true {
     include apache::mod::ssl
   }
