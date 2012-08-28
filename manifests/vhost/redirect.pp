@@ -23,7 +23,8 @@ define apache::vhost::redirect (
     $priority      = '10',
     $serveraliases = '',
     $template      = 'apache/vhost-redirect.conf.erb',
-    $vhost_name    = '*'
+    $vhost_name    = '*',
+    $ensure		   = present,
   ) {
 
   include apache
@@ -38,6 +39,7 @@ define apache::vhost::redirect (
     mode    => '0755',
     require => Package['httpd'],
     notify  => Service['httpd'],
+    ensure  => $ensure,
   }
 
   if ! defined(Firewall["0100-INPUT ACCEPT $port"]) {

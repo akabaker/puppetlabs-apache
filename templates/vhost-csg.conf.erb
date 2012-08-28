@@ -1,0 +1,99 @@
+# ************************************
+# Default csg-vhost in module puppetlabs-apache
+# Managed by Puppet
+# ************************************
+
+<VirtualHost <%= vhost_name %>:80>
+    ServerName <%= srvname %>
+	<% if serveradmin %>
+	ServerAdmin <%= serveradmin %>
+	<% end %>
+	<% if serveraliases.is_a? Array -%>
+	<% serveraliases.each do |name| -%><%= "  ServerAlias #{name}\n" %><% end -%>
+	<% elsif serveraliases != '' -%>
+	<%= "  ServerAlias #{serveraliases}" %>
+	<% end -%>
+
+    AccessFileName .htaccess
+	DocumentRoot <%= docroot %>
+	<Directory <%= docroot %>>
+		Options +ExecCGI +SymLinksIfOwnerMatch +MultiViews -Indexes +IncludesNOEXEC
+        AllowOverride AuthConfig FileInfo Limit
+        order deny,allow
+        deny from none
+        allow from all
+    </Directory>
+
+    <Location /secure/>
+      SSLRequireSSL
+    </Location>
+
+    #RewriteEngine on
+    #RewriteRule ^/secure/(.*)$ https://vh.missouri.edu/secure/$1 [R,L]
+
+    AddType text/html .shtml
+    AddHandler server-parsed .html .shtml
+    #php_value include_path ".:/sites/umcdoitvhweb/www"
+
+    <IfModule mod_userdir.c>
+        UserDir disable
+    </IfModule>
+
+</VirtualHost>
+
+# ---------------------------------------------------------------------
+<VirtualHost <%= vhost_name %>:443>
+
+    ServerName vh.missouri.edu
+    ServerAlias vh-tc1.missouri.edu
+    ServerAlias gateway.missouri.edu
+    ServerAdmin csg@missouri.edu
+    DocumentRoot /sites/umcdoitvhweb/www
+    AccessFileName .htaccess
+
+    <Directory /sites/umcdoitvhweb/www>
+        Options +ExecCGI +SymLinksIfOwnerMatch +MultiViews -Indexes +IncludesNOEXEC
+        AllowOverride AuthConfig FileInfo Limit
+        order deny,allow
+        deny from none
+        allow from all
+    </Directory>
+
+    <Location /secure/>
+      AuthType shibboleth
+      AuthName "vh"
+      ShibRequireSession on
+      AuthGroupFile  /sites/umcdoitvhweb/.htgroups
+      Require group admins users
+    </Location>
+
+    RewriteEngine on
+    RewriteCond %{HTTP_HOST} ^gateway\.missouri\.edu [NC]
+    RewriteRule ^/(.*)$ http://vh.missouri.edu/gatewaydown/index.html [P,L]
+
+    SSLEngine on
+    SSLCipherSuite ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP
+    SSLCertificateFile /etc/pki/tls/certs/vh.missouri.edu.crt
+    SSLCertificateKeyFile /etc/pki/tls/private/vh.missouri.edu.key
+#SSLCertificateChainFile /etc/pki/tls/certs/University_Of_Missouri_-_Columbia_Enterprise_CA.pem
+    #SSLCertificateChainFile /etc/pki/tls/certs/intermediate-Cl3-G5.crt
+    SSLCertificateChainFile /etc/pki/tls/certs/vh.missouri.edu-interm.crt
+   <Files ~ "\.(cgi|shtml|phtml|php3?)$">
+        SSLOptions +StdEnvVars
+    </Files>
+    SetEnvIf User-Agent ".*MSIE.*" \
+        nokeepalive ssl-unclean-shutdown \
+        downgrade-1.0 force-response-1.0
+
+    AddType text/html .shtml
+    AddHandler server-parsed .html .shtml
+    php_value include_path ".:/sites/umcdoitvhweb/www"
+
+    <IfModule mod_userdir.c>
+        UserDir disable
+    </IfModule>
+
+    AddHandler cgi-script .cgi
+    AddHandler cgi-script .pl
+
+</VirtualHost>
