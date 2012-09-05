@@ -36,6 +36,7 @@
 #  }
 #
 define apache::vhost(
+	$basedir            = "/var/www/html",
     $port				= '80',
     $docroot,
     $docroot_owner      = 'root',
@@ -66,6 +67,7 @@ define apache::vhost(
 
   include apache
 
+  # CSG addition
   if $cert {
   	file { "${apache::params::cert_dir}/${cert}":
   		owner => "root",
@@ -75,6 +77,7 @@ define apache::vhost(
   	}
   }
 
+  # CSG addition
   if $key {
   	file { "${apache::params::key_dir}/${key}":
   		owner => "root",
@@ -90,7 +93,6 @@ define apache::vhost(
     $srvname = $servername
   }
 
-  #SETS TEMPLATE TO SSL TEMPLATE
   if $ssl == true {
     include apache::mod::ssl
   }
@@ -104,12 +106,26 @@ define apache::vhost(
 
   # This ensures that the docroot exists
   # But enables it to be specified across multiple vhost resources
-  if ! defined(File[$docroot]) {
-    file { $docroot:
-      ensure => directory,
-      owner  => $docroot_owner,
-      group  => $docroot_group,
-    }
+  #if ! defined(File[$docroot]) {
+  if ! defined(Exec[$docroot]) {
+  	if $ensure == 'absent' {
+		exec { $docroot:
+			command	  => "rm -rf ${docroot}",
+			onlyif 	  => "test -d ${docroot}",
+		}
+  	} else {
+		exec { $docroot:
+			command	  => "mkdir -p ${docroot}",
+			onlyif 	  => "test ! -d ${docroot}",
+		}
+	}
+  	/*
+	file { $docroot:
+      ensure  => directory,
+      owner   => $docroot_owner,
+      group   => $docroot_group,
+	}
+	*/
   }
 
   # Same as above, but for logroot
@@ -128,7 +144,8 @@ define apache::vhost(
     mode    => '0755',
     require => [
       Package['httpd'],
-      File[$docroot],
+      #File[$docroot],
+      Exec[$docroot],
       File[$logroot],
     ],
     notify  => Service['httpd'],
@@ -145,4 +162,3 @@ define apache::vhost(
     }
   }
 }
-

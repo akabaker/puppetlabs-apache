@@ -29,7 +29,8 @@ define apache::vhost::redirect (
 
   include apache
 
-  $srvname = $name
+  #$srvname       = $name
+  $srvname		  = $vhost_name
 
   file { "${priority}-${name}.conf":
     path    => "${apache::params::vdir}/${priority}-${name}.conf",
